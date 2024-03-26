@@ -21,7 +21,7 @@ impl MetadataProviderFacade {
 
 #[tonic::async_trait]
 impl MetadataProvider for MetadataProviderFacade {
-    #[tracing::instrument(name = "grpc::metadata_provider::version", skip(self), level="trace")]
+    #[tracing::instrument(skip(self), level="trace")]
     async fn version(
         &self,
         request: Request<VersionRequest>,
