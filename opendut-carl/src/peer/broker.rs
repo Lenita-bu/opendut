@@ -50,15 +50,12 @@ impl PeerMessagingBroker {
         };
         let downstream = downstream.ok_or(Error::PeerNotFound(peer_id))?;
 
-        let context = if matches!(message, downstream::Message::Pong(_)).not() {
+        let context = {
             let mut context = TracingContext { values: Default::default() };
             let propagator = TraceContextPropagator::new();
             let span = Span::current().entered();
             propagator.inject_context(&span.context(), &mut context.values);
             Some(context)
-        }
-        else {
-            None
         };
 
         downstream.send(Downstream {
