@@ -3,6 +3,7 @@ pub use client::*;
 use opendut_types::cluster::{ClusterId, ClusterName};
 use opendut_types::cluster::state::ClusterState;
 use opendut_types::ShortName;
+use opentelemetry_sdk::propagation::TraceContextPropagator;
 
 #[derive(thiserror::Error, Debug)]
 pub enum CreateClusterConfigurationError {
@@ -102,12 +103,16 @@ pub struct ListClusterDeploymentsError {
 #[cfg(any(feature = "client", feature = "wasm-client"))]
 mod client {
     use tonic::codegen::{Body, Bytes, http, InterceptedService, StdError};
+    use tracing::{info, Span};
 
     use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 
     use crate::carl::{ClientError, extract};
     use crate::proto::services::cluster_manager;
     use crate::proto::services::cluster_manager::cluster_manager_client::ClusterManagerClient;
+    use crate::proto::services::cluster_manager::TracingContext;
+    use opentelemetry::propagation::text_map_propagator::TextMapPropagator;
+    use tracing_opentelemetry::OpenTelemetrySpanExt;
 
     use super::*;
 
@@ -220,8 +225,24 @@ mod client {
             }
         }
 
+        #[tracing::instrument(skip(self), level = tracing::Level::TRACE)]
         pub async fn list_cluster_configurations(&mut self) -> Result<Vec<ClusterConfiguration>, ListClusterConfigurationsError> {
-            let request = tonic::Request::new(cluster_manager::ListClusterConfigurationsRequest {});
+
+            let context = {
+                let mut context = TracingContext { values: Default::default() };
+                let propagator = TraceContextPropagator::new();
+                let span = Span::current().entered();
+                info!("carl-api: current context is {:?}", Span::current().context());
+                propagator.inject_context(&span.context(), &mut context.values);
+                info!("carl-api: current context is {:?}", context);
+                info!("carl-api: current span is {:?}", span);
+                Some(context)
+            };
+
+            info!("carl-api: current context is {:?}", context);
+            info!("Test4");
+
+            let request = tonic::Request::new(cluster_manager::ListClusterConfigurationsRequest { context });
 
             match self.inner.list_cluster_configurations(request).await {
                 Ok(response) => {
@@ -245,11 +266,21 @@ mod client {
             }
         }
 
+        #[tracing::instrument(skip(self), level = tracing::Level::TRACE)]
         pub async fn store_cluster_deployment(&mut self, deployment: ClusterDeployment) -> Result<ClusterId, ClientError<StoreClusterDeploymentError>> {
+
+            let context = {
+                let mut context = TracingContext { values: Default::default() };
+                let propagator = TraceContextPropagator::new();
+                let span = Span::current().entered();
+                propagator.inject_context(&span.context(), &mut context.values);
+                Some(context)
+            };
 
             let request = tonic::Request::new(cluster_manager::StoreClusterDeploymentRequest {
                 cluster_deployment: Some(deployment.into()),
-            });
+                context
+            }, );
 
             let response = self.inner.store_cluster_deployment(request).await?
                 .into_inner();
@@ -266,6 +297,7 @@ mod client {
             }
         }
 
+        #[tracing::instrument(skip(self), level = tracing::Level::TRACE)]
         pub async fn delete_cluster_deployment(&mut self, cluster_id: ClusterId) -> Result<ClusterDeployment, ClientError<DeleteClusterDeploymentError>> {
 
             let request = tonic::Request::new(cluster_manager::DeleteClusterDeploymentRequest {
@@ -287,6 +319,7 @@ mod client {
             }
         }
 
+        #[tracing::instrument(skip(self), level = tracing::Level::TRACE)]
         pub async fn list_cluster_deployments(&mut self) -> Result<Vec<ClusterDeployment>, ListClusterDeploymentsError> {
             let request = tonic::Request::new(cluster_manager::ListClusterDeploymentsRequest {});
 

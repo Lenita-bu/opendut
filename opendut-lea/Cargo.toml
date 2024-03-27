@@ -30,6 +30,16 @@ url = { workspace = true }
 uuid = { workspace = true, features = ["v4", "serde"] }
 leptos_oidc =  { workspace = true }
 serde_json = { workspace = true }
+opentelemetry = { workspace = true }
+opentelemetry_sdk = { workspace= true }
+opentelemetry-semantic-conventions = { workspace = true }
+opentelemetry-stdout = "0.3.0"
+tracing-opentelemetry = { workspace = true }
+#opentelemetry-otlp = { workspace = true, features = ["logs", "trace"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+opentelemetry-otlp = { workspace = true, features = ["logs", "trace"] }
+opentelemetry-dynatrace = { version = "0.4.0", features = ["wasm"] }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.37"

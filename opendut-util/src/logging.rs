@@ -13,6 +13,7 @@ use opentelemetry_sdk::logs::Logger;
 use opentelemetry_sdk::propagation::TraceContextPropagator;
 use tracing_subscriber::filter::Directive;
 use tracing_subscriber::filter::EnvFilter;
+use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use url::Url;
@@ -45,6 +46,7 @@ pub fn initialize_with_config(config: LoggingConfig) -> Result<ShutdownHandle, E
         .from_env()?;
 
     let stdout_logging_layer = tracing_subscriber::fmt::layer()
+        .with_span_events(FmtSpan::NEW | FmtSpan::CLOSE)
         .compact();
 
     let file_logging_layer =

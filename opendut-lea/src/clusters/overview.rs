@@ -1,8 +1,17 @@
 use leptos::*;
 use leptos::html::Div;
 use leptos_use::on_click_outside;
+use opentelemetry::{global, KeyValue};
+use opentelemetry::propagation::TextMapPropagator;
+use opentelemetry::trace::{get_active_span, mark_span_as_active, Tracer};
+use tracing::Span;
+use opentelemetry_sdk::propagation::TraceContextPropagator;
 use serde::{Deserialize, Serialize};
+use tracing::{info, info_span};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
+use tracing::Instrument;
 
+use opendut_carl_api::proto::services::peer_messaging_broker::TracingContext;
 use opendut_types::cluster::{ClusterConfiguration, ClusterDeployment, ClusterId};
 
 use crate::app::{ExpectGlobals, use_app_globals};
@@ -20,7 +29,17 @@ pub fn ClustersOverview() -> impl IntoView {
 
         let clusters = create_local_resource(|| {}, move |_| {
             let mut carl = globals.expect_client();
+
+            let tracer = global::tracer("lea-tracer");
+
             async move {
+                let span = tracing::span!(tracing::Level::INFO, "lea_list_span");
+
+
+                info!("lea outside: current span is {:?}", &span);
+                info!("lea outside: current context is {:?}", &span.context());
+                info!("Something happened here");
+
                 carl.cluster.list_cluster_configurations().await
                     .expect("Failed to request the list of clusters")
             }

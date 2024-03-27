@@ -119,7 +119,9 @@ message GetClusterConfigurationFailure {}
 //
 // ListClusterConfigurations
 //
-message ListClusterConfigurationsRequest {}
+message ListClusterConfigurationsRequest {
+  TracingContext context = 1;
+}
 
 message ListClusterConfigurationsResponse {
   oneof result {
@@ -139,6 +141,7 @@ message ListClusterConfigurationsFailure {}
 //
 message StoreClusterDeploymentRequest {
   opendut.types.cluster.ClusterDeployment cluster_deployment = 1;
+  TracingContext context = 2;
 }
 
 message StoreClusterDeploymentResponse {
@@ -232,3 +235,7 @@ message ListClusterDeploymentsSuccess {
 }
 
 message ListClusterDeploymentsFailure {}
+
+message TracingContext {
+  map<string, string> values = 1;
+}

@@ -1,7 +1,11 @@
 use std::sync::Arc;
+use opentelemetry::propagation::TextMapPropagator;
+use opentelemetry_sdk::propagation::TraceContextPropagator;
 
 use tonic::{Request, Response, Status};
 use tonic_web::CorsGrpcWeb;
+use tracing::{info, Span};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 
 use opendut_carl_api::proto::services::cluster_manager::*;
 use opendut_carl_api::proto::services::cluster_manager::cluster_manager_server::{ClusterManager as ClusterManagerService, ClusterManagerServer};
@@ -130,6 +134,18 @@ impl ClusterManagerService for ClusterManagerFacade {
     #[tracing::instrument(skip(self), level="trace")]
     async fn list_cluster_configurations(&self, request: Request<ListClusterConfigurationsRequest>) -> Result<Response<ListClusterConfigurationsResponse>, Status> {
         log::trace!("Received request: {:?}", request);
+
+        let request = request.into_inner();
+        let context: TracingContext = extract!(request.context)?;
+
+        let span = Span::current();
+        let propagator = TraceContextPropagator::new();
+        let parent_context = propagator.extract(&context.values);
+        info!("The parent context is: {:?}", parent_context);
+        span.set_parent(parent_context);
+        let _span = span.enter();
+        info!("The current span is: {:?}", _span);
+
         let configurations = self.cluster_manager.list_configuration().await;
         Ok(Response::new(ListClusterConfigurationsResponse {
             result: Some(list_cluster_configurations_response::Result::Success(
@@ -146,6 +162,14 @@ impl ClusterManagerService for ClusterManagerFacade {
 
         let request = request.into_inner();
         let cluster_deployment: ClusterDeployment = extract!(request.cluster_deployment)?;
+        let context: TracingContext = extract!(request.context)?;
+
+        let span = Span::current();
+        //set_parent_context(Span::current(), request.context);
+        let propagator = TraceContextPropagator::new();
+        let parent_context = propagator.extract(&context.values);
+        span.set_parent(parent_context);
+        let _span = span.enter();
 
         let result = self.cluster_manager.store_cluster_deployment(cluster_deployment).await;
 

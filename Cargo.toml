@@ -83,7 +83,7 @@ oauth2 = { version = "4.4.2", default-features = false }
 opentelemetry = "0.22.0"
 opentelemetry-appender-tracing = "0.3.0"
 opentelemetry-otlp = "0.15.0"
-opentelemetry_sdk = "0.22.0"
+opentelemetry_sdk = "0.22.1"
 opentelemetry-semantic-conventions = "0.14.0"
 pem = {version = "3.0.3", features = ["serde"]}
 phf = { version = "0.11", features = ["macros"] }
