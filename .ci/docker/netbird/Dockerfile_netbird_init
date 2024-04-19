@@ -14,6 +14,7 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install
 
 # add the insecure development CA to the trust store
 COPY ./resources/development/tls/ /opendut-tls/
+COPY ./.ci/docker/netbird/opentelemetry-shell/ /opentelemetry-shell/
 COPY ./.ci/docker/netbird/add-root-certificates.sh /opendut-tls/add-root-certificates.sh
 RUN chmod +x /opendut-tls/add-root-certificates.sh && /opendut-tls/add-root-certificates.sh
 

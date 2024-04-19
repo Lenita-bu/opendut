@@ -1,17 +1,27 @@
 #!/bin/bash
 
+export OTEL_EXPORTER_OTEL_ENDPOINT="http://192.168.32.220:4318"
+export OTEL_SERVICE_NAME="netbird-shell"
+export OTEL_SH_LIB_PATH="opentelemetry-shell/library"
+. "${OTEL_SH_LIB_PATH}/otel_traces.sh"
+
+
 source /netbird-api-functions.sh
 
-# wait for keycloak
-wait_for_url "$KEYCLOAK_URL" 600 5 || exit 1
-# wait for realm to be provisioned
-wait_for_url "$KEYCLOAK_URL/realms/netbird/.well-known/openid-configuration" 600 5 || exit 1
-# wait for netbird to be ready
-wait_for_url "$NETBIRD_MANAGEMENT_URL" 600 5 || exit 1
-# wait for service response
-wait_for_netbird_user_to_be_synced_from_keycloak "netbird" 600 5 || exit 1
+otel_trace_start_parent_span "netbird-api-init.sh"
 
-netbird_auth
+# wait for keycloak
+otel_trace_add_child_span wait_for_url "$KEYCLOAK_URL" 600 5 || exit 1
+
+# wait for realm to be provisioned
+otel_trace_add_child_span wait_for_url "$KEYCLOAK_URL/realms/netbird/.well-known/openid-configuration" 600 5 || exit 1
+
+# wait for netbird to be ready
+otel_trace_add_child_span wait_for_url "$NETBIRD_MANAGEMENT_URL" 600 5 || exit 1
+# wait for service response
+otel_trace_add_child_span wait_for_netbird_user_to_be_synced_from_keycloak "netbird" 600 5 || exit 1
+
+otel_trace_add_child_span netbird_auth
 
 if [ ! -e "/management/api_key" ]; then
   API_KEY=$(get_netbird_api_token)
@@ -27,7 +37,7 @@ fi
 
 # disable communication between peers by default
 # --> requires to be in a group explicitly
-policy_disable_default_rule
+otel_trace_add_child_span policy_disable_default_rule
 
 if [ ! -e "/management/testenv_setup_key" ]; then
   GROUP_NAME="testenv"

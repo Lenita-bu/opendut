@@ -44,6 +44,7 @@ services:
    image: otel/opentelemetry-collector-contrib:0.97.0
    volumes:
      - ./otel-collector.yml:/etc/collector-gateway.yaml
+     - ./simple.log:/etc/simple.log
    command: [ "--config=/etc/collector-gateway.yaml" ]
    depends_on:
      - tempo
